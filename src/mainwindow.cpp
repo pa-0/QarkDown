@@ -1002,7 +1002,7 @@ void MainWindow::lookupInDictionary()
 
     [editorNSView
         showDefinitionForAttributedString:as
-        range:NSMakeRange(0,0) // full range
+        range:NSMakeRange(0, as.length) // full range
         options:@{NSDefinitionPresentationTypeKey:NSDefinitionPresentationTypeOverlay}
         baselineOriginProvider:^NSPoint(NSRange adjustedRange){
             // Here we must return a "baseline origin for the first character"
