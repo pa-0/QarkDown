@@ -1,19 +1,18 @@
 #!/bin/bash
 
+set -euo pipefail
+
 TRUE=0
 FALSE=1
 
-DEFAULT_QTVERSION="5.9.3"
+QTVERSION="6.8.0"
 QT_SDK_PATH="${HOME}/Qt"
 
 echo "Remember to create a _fresh_ release build in Qt Creator first!"
 echo "Assuming Qt SDK is at: ${QT_SDK_PATH}"
+echo "Using Qt version: ${QTVERSION}"
+echo "Press return to continue."
 read
-
-echo "Type in the Qt version to use, or press enter to use the default ($DEFAULT_QTVERSION)"
-read QTVERSION
-
-[ "$QTVERSION" == "" ] && QTVERSION="$DEFAULT_QTVERSION"
 
 find_qarkdown_app()
 {
@@ -49,7 +48,7 @@ else
         remove=${TRUE}
         for tokeep in "QtCore" "QtGui" "QtWidgets" "QtNetwork" "QtWebKit" \
                       "QtWebKitWidgets" "QtQuick" "QtQml" "QtOpenGL" \
-                      "QtPrintSupport" "QtSql" "QtV8" "QtSensors"; do
+                      "QtPrintSupport" "QtSql" "QtV8" "QtSensors" "QtDBus"; do
             [[ "${bn}" == "${tokeep}" ]] && remove=${FALSE}
         done
         if [[ $remove -eq ${TRUE} ]];then

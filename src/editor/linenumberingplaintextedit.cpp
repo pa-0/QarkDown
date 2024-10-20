@@ -60,7 +60,7 @@ int LineNumberingPlainTextEdit::lineNumberAreaWidth()
 
     static int nineCharWidth = -1;
     if (nineCharWidth == -1)
-        nineCharWidth = fontMetrics().width(QLatin1Char('9'));
+        nineCharWidth = fontMetrics().horizontalAdvance(QLatin1Char('9'));
     int digitsWidth = nineCharWidth * digits;
     return kLeftMargin + digitsWidth + kRightMargin;
 }

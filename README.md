@@ -25,7 +25,7 @@ Copyright © Ali Rantakari
 Build Requirements
 ==================
 
-Qt 5.
+Qt 6.8.0
 
 
 Installing

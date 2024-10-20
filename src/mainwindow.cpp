@@ -1,5 +1,5 @@
 #include <QtGui/QDesktopServices>
-#include <QtWidgets/QAction>
+#include <QtGui/QAction>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QFileDialog>
@@ -8,6 +8,7 @@
 #include <QtWidgets/QScrollBar>
 #include <QtCore/QTextStream>
 #include <QtCore/QCryptographicHash>
+#include <QStandardPaths>
 
 #include "mainwindow.h"
 #include "defines.h"
@@ -151,8 +152,8 @@ void MainWindow::newFile()
         return;
 
     editor->clear();
-    setOpenFilePath(QString::null);
-    lastCompileTargetPath = QString::null;
+    setOpenFilePath(QString());
+    lastCompileTargetPath = QString();
     recompileAction->setEnabled(false);
     setDirty(false);
     updateRecentFilesMenu();
@@ -161,7 +162,7 @@ void MainWindow::newFile()
 QString MainWindow::getMarkdownFilesFilter()
 {
     QStringList extensions = settings->value(SETTING_EXTENSIONS, DEF_EXTENSIONS)
-                             .toString().split(' ', QString::SkipEmptyParts);
+                             .toString().split(' ', Qt::SkipEmptyParts);
     if (extensions.count() == 0)
         return "All Files (*.*)";
 
@@ -181,7 +182,7 @@ QString MainWindow::getMarkdownFilesFilter()
 QStringList MainWindow::getMarkdownFilesFilterList()
 {
     QStringList extensions = settings->value(SETTING_EXTENSIONS, DEF_EXTENSIONS)
-                             .toString().split(' ', QString::SkipEmptyParts);
+                             .toString().split(' ', Qt::SkipEmptyParts);
     if (extensions.count() == 0)
         return QStringList("*.*");
 
@@ -273,13 +274,13 @@ void MainWindow::openFile(const QString &path)
     }
 
     QTextStream inStream(&file);
-    inStream.setCodec("UTF-8");
+    inStream.setEncoding(QStringConverter::Utf8);
     editor->setPlainText(inStream.readAll());
     file.close();
 
     setOpenFilePath(filePathToOpen);
     recompileAction->setEnabled(false);
-    lastCompileTargetPath = QString::null;
+    lastCompileTargetPath = QString();
 
     setDirty(false);
     bool rememberLastFile = settings->value(SETTING_REMEMBER_LAST_FILE,
@@ -315,7 +316,7 @@ void MainWindow::saveFile(QString targetPath)
         return;
     }
     QTextStream outStream(&file);
-    outStream.setCodec("UTF-8");
+    outStream.setEncoding(QStringConverter::Utf8);
     outStream << editor->toPlainText();
     file.close();
 
@@ -347,7 +348,7 @@ void MainWindow::saveMenuItemHandler()
 
 void MainWindow::saveAsMenuItemHandler()
 {
-    saveFile(QString::null);
+    saveFile(QString());
 }
 
 void MainWindow::revertToSaved()
@@ -419,7 +420,7 @@ QPair<int,int> MainWindow::getViewPositions(QString filePath)
 {
     QMap<QString, QVariant> positionsByFile = settings->value(SETTING_RECENT_FILE_VIEW_POSITIONS).toMap();
     QList<QVariant> thisPositions = positionsByFile.value(standardizeFilePath(filePath)).toList();
-    if (thisPositions.isEmpty())
+    if (thisPositions.size() < 2)
         return QPair<int,int>(0,0);
     return QPair<int,int>(thisPositions.at(0).toInt(), thisPositions.at(1).toInt());
 }
@@ -468,7 +469,7 @@ void MainWindow::applyPersistedFontInfo()
     int tabWidthInChars = settings->value(SETTING_TAB_WIDTH,
                                           QVariant(DEF_TAB_WIDTH)).toInt();
     QFontMetrics fontMetrics(font);
-    editor->setTabStopWidth(fontMetrics.charWidth("m", 0) * tabWidthInChars);
+    editor->setTabStopDistance(fontMetrics.horizontalAdvance("m", 0) * tabWidthInChars);
 }
 
 void MainWindow::selectTextToSearchFor()
@@ -850,27 +851,23 @@ void MainWindow::setupFileMenu()
 {
     QMenu *fileMenu = new QMenu(tr("&File"), this);
     menuBar()->addMenu(fileMenu);
-    fileMenu->addAction(tr("&New"), this, SLOT(newFile()),
-                        QKeySequence::New);
-    fileMenu->addAction(tr("&Open..."), this, SLOT(openFile()),
-                        QKeySequence::Open);
+    fileMenu->addAction(tr("&New"), QKeySequence::New, this, SLOT(newFile()));
+    fileMenu->addAction(tr("&Open..."), QKeySequence::Open, this, SLOT(openFile()));
     recentFilesMenu = new QMenu(tr("Open Recent..."), this);
     fileMenu->addMenu(recentFilesMenu);
     switchToPreviousFileAction = fileMenu->addAction(tr("Switch to Previous File"),
-                                                     this, SLOT(switchToPreviousFile()),
-                                                     QKeySequence("Ctrl+Shift+P"));
+                                                     QKeySequence("Ctrl+Shift+P"),
+                                                     this, SLOT(switchToPreviousFile()));
     switchToPreviousFileAction->setEnabled(false);
     fileMenu->addAction(tr("Switch to Recent File..."),
-                        this, SLOT(showRecentFileSearchDialog()),
-                        QKeySequence("Ctrl+Shift+O"));
+                        QKeySequence("Ctrl+Shift+O"),
+                        this, SLOT(showRecentFileSearchDialog()));
     fileMenu->addAction(tr("Switch to File in Notes Folder"),
-                        this, SLOT(showNotesFolderFileSearchDialog()),
-                        QKeySequence("Ctrl+Shift+N"));
+                        QKeySequence("Ctrl+Shift+N"),
+                        this, SLOT(showNotesFolderFileSearchDialog()));
     fileMenu->addSeparator();
-    fileMenu->addAction(tr("&Save"), this, SLOT(saveMenuItemHandler()),
-                        QKeySequence::Save);
-    fileMenu->addAction(tr("Save As..."), this, SLOT(saveAsMenuItemHandler()),
-                        QKeySequence::SaveAs);
+    fileMenu->addAction(tr("&Save"), QKeySequence::Save, this, SLOT(saveMenuItemHandler()));
+    fileMenu->addAction(tr("Save As..."), QKeySequence::SaveAs, this, SLOT(saveAsMenuItemHandler()));
     revertToSavedMenuAction = fileMenu->addAction(tr("&Revert to Saved"), this,
                                                   SLOT(revertToSaved()));
     revertToSavedMenuAction->setEnabled(false);
@@ -885,51 +882,41 @@ void MainWindow::setupFileMenu()
             #endif
             this, SLOT(revealFileDir()));
     revealFileAction->setEnabled(false);
-    fileMenu->addAction(tr("E&xit"), this, SLOT(quitActionHandler()),
-                        QKeySequence::Quit);
+    fileMenu->addAction(tr("E&xit"), QKeySequence::Quit, this, SLOT(quitActionHandler()));
 
     QMenu *editMenu = new QMenu(tr("&Edit"), this);
     menuBar()->addMenu(editMenu);
-    editMenu->addAction(tr("&Find..."), this, SLOT(selectTextToSearchFor()),
-                        QKeySequence::Find);
-    findNextMenuAction = editMenu->addAction(tr("Find Next"),
-                                             this, SLOT(findNextSearchMatch()),
-                                             QKeySequence::FindNext);
-    findPreviousMenuAction = editMenu->addAction(tr("Find Previous"),
-                                                 this, SLOT(findPreviousSearchMatch()),
-                                                 QKeySequence::FindPrevious);
+    editMenu->addAction(tr("&Find..."), QKeySequence::Find, this, SLOT(selectTextToSearchFor()));
+    findNextMenuAction = editMenu->addAction(tr("Find Next"), QKeySequence::FindNext,
+                                             this, SLOT(findNextSearchMatch()));
+    findPreviousMenuAction = editMenu->addAction(tr("Find Previous"), QKeySequence::FindPrevious,
+                                                 this, SLOT(findPreviousSearchMatch()));
     findNextMenuAction->setEnabled(false);
     findPreviousMenuAction->setEnabled(false);
 
     QMenu *formattingMenu = new QMenu(tr("F&ormatting"), this);
     menuBar()->addMenu(formattingMenu);
-    formattingMenu->addAction(tr("Emphasized"), this, SLOT(formatSelectionEmphasized()),
-                              QKeySequence("Ctrl+I"));
-    formattingMenu->addAction(tr("Strong"), this, SLOT(formatSelectionStrong()),
-                              QKeySequence("Ctrl+B"));
-    formattingMenu->addAction(tr("Code"), this, SLOT(formatSelectionCode()),
-                              QKeySequence("Ctrl+D"));
+    formattingMenu->addAction(tr("Emphasized"), QKeySequence("Ctrl+I"), this, SLOT(formatSelectionEmphasized()));
+    formattingMenu->addAction(tr("Strong"), QKeySequence("Ctrl+B"), this, SLOT(formatSelectionStrong()));
+    formattingMenu->addAction(tr("Code"), QKeySequence("Ctrl+D"), this, SLOT(formatSelectionCode()));
 
     QMenu *toolsMenu = new QMenu(tr("&Tools"), this);
     menuBar()->addMenu(toolsMenu);
-    toolsMenu->addAction(tr("Increase Font Size"), this, SLOT(increaseFontSize()),
-                         QKeySequence("Ctrl++"));
-    toolsMenu->addAction(tr("Decrease Font Size"), this, SLOT(decreaseFontSize()),
-                         QKeySequence("Ctrl+-"));
-    toolsMenu->addAction(tr("&Preferences..."), this, SLOT(showPreferences()),
-                         QKeySequence::Preferences);
+    toolsMenu->addAction(tr("Increase Font Size"), QKeySequence("Ctrl++"), this, SLOT(increaseFontSize()));
+    toolsMenu->addAction(tr("Decrease Font Size"), QKeySequence("Ctrl+-"), this, SLOT(decreaseFontSize()));
+    toolsMenu->addAction(tr("&Preferences..."), QKeySequence::Preferences, this, SLOT(showPreferences()));
 
     QMenu *compilingMenu = new QMenu(tr("&Compiling"), this);
     menuBar()->addMenu(compilingMenu);
     compilingMenu->addAction(tr("Compile to temporary HTML file"),
-                             this, SLOT(compileToTempHTML()),
-                             QKeySequence("Ctrl+T"));
+                             QKeySequence("Ctrl+T"),
+                             this, SLOT(compileToTempHTML()));
     compilingMenu->addAction(tr("Compile to HTML file..."),
-                             this, SLOT(compileToHTMLAs()),
-                             QKeySequence("Ctrl+Shift+T"));
+                             QKeySequence("Ctrl+Shift+T"),
+                             this, SLOT(compileToHTMLAs()));
     recompileAction = compilingMenu->addAction(tr("Recompile"),
-                                               this, SLOT(recompileToHTML()),
-                                               QKeySequence("Ctrl+Return"));
+                                               QKeySequence("Ctrl+Return"),
+                                               this, SLOT(recompileToHTML()));
     recompileAction->setEnabled(false);
 
     QMenu *helpMenu = new QMenu(tr("&Help"), this);

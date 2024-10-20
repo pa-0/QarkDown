@@ -9,6 +9,7 @@
 #include <QtWidgets/QColorDialog>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMessageBox>
+#include <QtWidgets/QButtonGroup>
 #include <QtGui/QDesktopServices>
 #include <QtCore/QTextStream>
 
@@ -53,7 +54,7 @@ PreferencesDialog::PreferencesDialog(QSettings *appSettings,
     ui->notesInfoLabel->setFont(font);
 #endif
 
-#ifdef Q_OS_MACX
+#ifdef Q_OS_MACOS
     ui->linkInfoLabel->setText(tr("If enabled, you can click on links while "
                                   "holding the Command key."));
 #else
@@ -161,7 +162,7 @@ void PreferencesDialog::updateStylesComboBoxFromSettings()
     foreach (QString builtInStyleName, QDir(":/styles/").entryList())
     {
         QString builtinStyleFullPath = QDir(":/styles/" + builtInStyleName).absolutePath();
-        ADD_COMBO_ITEM(builtInStyleName, builtinStyleFullPath, QString::null);
+        ADD_COMBO_ITEM(builtInStyleName, builtinStyleFullPath, QString());
         if (builtinStyleFullPath == selectedStylePath)
             indexToSelect = i;
         i++;
@@ -177,7 +178,7 @@ void PreferencesDialog::updateStylesComboBoxFromSettings()
         foreach (QString userStyleFile, userStyles)
         {
             QString userStyleFullPath = QDir(userStylesDirPath + "/" + userStyleFile).absolutePath();
-            ADD_COMBO_ITEM(QFileInfo(userStyleFile).baseName(), userStyleFullPath, QString::null);
+            ADD_COMBO_ITEM(QFileInfo(userStyleFile).baseName(), userStyleFullPath, QString());
             if (userStyleFullPath == selectedStylePath)
                 indexToSelect = i;
             i++;
@@ -233,7 +234,7 @@ QString PreferencesDialog::versionStringForBuiltinCompiler(QString compilerPath)
         args << "-V";
     else
         args << "--version";
-    QPair<QString, QString> compilerVersionOutput = compiler->executeCompiler(compilerPath, QString::null, args);
+    QPair<QString, QString> compilerVersionOutput = compiler->executeCompiler(compilerPath, QString(), args);
     return compilerVersionOutput.first;
 }
 
@@ -273,7 +274,7 @@ void PreferencesDialog::updateCompilersComboBoxFromSettings()
         {
             QString userCompilerFullPath = QDir(userCompilersDirPath + QDir::separator() + userCompilerFileName).absolutePath();
             ADD_COMBO_ITEM(QFileInfo(userCompilerFileName).baseName(),
-                           userCompilerFullPath, QString::null);
+                           userCompilerFullPath, QString());
             if (userCompilerFullPath == selectedCompilerPath)
                 indexToSelect = i;
             i++;

@@ -2,6 +2,7 @@
 #include "logger.h"
 #include <QtGui/QFileOpenEvent>
 #include <QtGui/QDesktopServices>
+#include <QStandardPaths>
 
 
 struct applicationVersion
@@ -23,7 +24,7 @@ QarkdownApplication::QarkdownApplication(int &argc, char **argv) :
     setWindowIcon(QIcon(":/appIcon.png"));
 #endif
     QCoreApplication::setApplicationName("QarkDown");
-    QCoreApplication::setApplicationVersion(QString().sprintf("%i.%i.%i", appVersion.major, appVersion.minor, appVersion.tiny));
+    QCoreApplication::setApplicationVersion(QString("%1.%2.%3").arg(appVersion.major).arg(appVersion.minor).arg(appVersion.tiny));
 }
 
 QarkdownApplication::~QarkdownApplication()
@@ -43,7 +44,7 @@ QString QarkdownApplication::websiteURL()
 QString QarkdownApplication::applicationStoragePath()
 {
     QString appName = QCoreApplication::applicationName();
-    QString path = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+    QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     // DataLocation should be defined on all but embedded platforms but just
     // to be safe we do this:
     if (path.isEmpty())

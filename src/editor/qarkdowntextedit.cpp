@@ -218,8 +218,8 @@ QString QarkdownTextEdit::getAnchorHrefAtPos(QPoint pos)
     QTextCursor cur = cursorForPosition(pos);
     // "\n" is not clickable:
     if (document()->characterAt(cur.position()) == QChar::ParagraphSeparator)
-        return QString::null;
-    QList<QTextLayout::FormatRange> formats = cur.block().layout()->additionalFormats();
+        return QString();
+    QList<QTextLayout::FormatRange> formats = cur.block().layout()->formats();
     int posInBlock = cur.position() - cur.block().position();
     foreach (QTextLayout::FormatRange range, formats)
     {
@@ -229,7 +229,7 @@ QString QarkdownTextEdit::getAnchorHrefAtPos(QPoint pos)
         if (!href.isNull())
             return href;
     }
-    return QString::null;
+    return QString();
 }
 
 

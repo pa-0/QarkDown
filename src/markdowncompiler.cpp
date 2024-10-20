@@ -6,6 +6,7 @@
 #include <QtCore/QDir>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QTextStream>
+#include <QtCore/QRegularExpression>
 
 MarkdownCompiler::MarkdownCompiler(QSettings *appSettings, QObject *parent) :
     QObject(parent)
@@ -28,7 +29,7 @@ QString MarkdownCompiler::getHTMLTemplate()
     QFile templateFile(templateFilePath);
     if (!templateFile.open(QIODevice::ReadOnly)) {
         Logger::warning("Cannot open file for reading: " + templateFile.fileName());
-        return QString::null;
+        return QString();
     }
     QTextStream stream(&templateFile);
     QString contents = stream.readAll();
@@ -39,8 +40,8 @@ QString MarkdownCompiler::getHTMLTemplate()
 QString MarkdownCompiler::wrapHTMLContentInTemplate(QString htmlContent)
 {
     QString templateStr = getHTMLTemplate();
-    QRegExp contentCommentRE("\\<\\!--\\s*[Cc]ontent\\s*-->");
-    QStringList parts = templateStr.split(contentCommentRE, QString::SkipEmptyParts);
+    static const QRegularExpression contentCommentRE("\\<\\!--\\s*[Cc]ontent\\s*-->");
+    QStringList parts = templateStr.split(contentCommentRE, Qt::SkipEmptyParts);
     if (parts.count() == 2)
     {
         return parts[0] + htmlContent + parts[1];
@@ -50,7 +51,7 @@ QString MarkdownCompiler::wrapHTMLContentInTemplate(QString htmlContent)
         _errorString = (parts.count() < 2)
                        ? tr("HTML template does not contain a content comment.")
                        : tr("HTML template contains more than one content comment.");
-        return QString::null;
+        return QString();
     }
 }
 
@@ -64,12 +65,12 @@ QString MarkdownCompiler::getFilesystemPathForResourcePath(QString resourcePath)
     if (!QFile::exists(targetFilePath)) {
         if (!((QarkdownApplication*)qApp)->copyResourceToFile(resourcePath,
                                                               targetFilePath))
-            return QString::null;
+            return QString();
     }
 
     if (!QFileInfo(targetFilePath).isExecutable()) {
         if (!QFile(targetFilePath).setPermissions(QFile::ExeUser))
-            return QString::null;
+            return QString();
     }
 
     if (QFile::exists(resourcePath + ".dependencies"))
@@ -84,7 +85,7 @@ QString MarkdownCompiler::getFilesystemPathForResourcePath(QString resourcePath)
                 if (!((QarkdownApplication*)qApp)->copyResourceToFile(
                             depsDirPath + QDir::separator() + depFileName,
                             depTargetPath))
-                    return QString::null;
+                    return QString();
             }
         }
     }
@@ -124,8 +125,8 @@ QStringList MarkdownCompiler::getArgsListForCompiler(QString compilerPath, bool 
 
     if (args.trimmed().length() == 0)
         return QStringList();
-    QRegExp whitespaceRE("\\s+");
-    return args.split(whitespaceRE, QString::SkipEmptyParts);
+    static const QRegularExpression whitespaceRE("\\s+");
+    return args.split(whitespaceRE, Qt::SkipEmptyParts);
 }
 
 QString MarkdownCompiler::getUserReadableCompilerName(QString compilerPath)
@@ -136,12 +137,12 @@ QString MarkdownCompiler::getUserReadableCompilerName(QString compilerPath)
     return ret;
 }
 
-#define kCompileEmptyRetVal QPair<QString, QString>(QString::null, QString::null)
+#define kCompileEmptyRetVal QPair<QString, QString>(QString(), QString())
 
 QPair<QString, QString> MarkdownCompiler::executeCompiler(QString compilerPath, QString input, QStringList compilerArgsList)
 {
     //Logger::info("Compiling with compiler: " + compilerPath);
-    _errorString = QString::null;
+    _errorString = QString();
 
     QString actualCompilerPath(compilerPath);
     bool isResourcePath = compilerPath.startsWith(":/");

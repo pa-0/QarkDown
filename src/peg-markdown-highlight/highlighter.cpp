@@ -69,7 +69,7 @@ WorkerThread::~WorkerThread()
 {
     if (result != NULL)
         pmh_free_elements(result);
-    content = QString::null;
+    content = QString();
 }
 void WorkerThread::run()
 {
@@ -227,10 +227,9 @@ QBrush brushFromARGBStyle(pmh_attr_argb_color *color)
 
 QString HGMarkdownHighlighter::availableFontFamilyFromPreferenceList(QString familyList)
 {
-    QStringList preferredFamilies = familyList.split(',', QString::SkipEmptyParts);
+    QStringList preferredFamilies = familyList.split(',', Qt::SkipEmptyParts);
 
-    QFontDatabase fontDB;
-    QStringList availableFamilies = fontDB.families();
+    QStringList availableFamilies = QFontDatabase::families();
 
     foreach (QString familyPreference, preferredFamilies)
     {
@@ -250,7 +249,7 @@ QString HGMarkdownHighlighter::availableFontFamilyFromPreferenceList(QString fam
         }
     }
 
-    return QString::null;
+    return QString();
 }
 
 
@@ -290,7 +289,7 @@ QTextCharFormat getCharFormatFromStyleAttributes(pmh_style_attribute *list,
             QString familyList(list->value->font_family);
             QString availableFamily = HGMarkdownHighlighter::availableFontFamilyFromPreferenceList(familyList);
             if (!availableFamily.isNull())
-                format.setFontFamily(availableFamily);
+                format.setFontFamilies(QStringList(availableFamily));
         }
         list = list->next;
     }
@@ -422,7 +421,7 @@ void HGMarkdownHighlighter::clearFormatting()
     QTextBlock block = document->firstBlock();
     while (block.isValid())
     {
-        block.layout()->clearAdditionalFormats();
+        block.layout()->clearFormats();
         block = block.next();
     }
 }
@@ -477,7 +476,7 @@ void HGMarkdownHighlighter::highlight()
                 QTextBlock block = document->findBlockByNumber(j);
 
                 QTextLayout *layout = block.layout();
-                QList<QTextLayout::FormatRange> list = layout->additionalFormats();
+                QList<QTextLayout::FormatRange> list = layout->formats();
                 int blockpos = block.position();
                 QTextLayout::FormatRange r;
                 r.format = style.format;
@@ -513,7 +512,7 @@ void HGMarkdownHighlighter::highlight()
                 }
 
                 list.append(r);
-                layout->setAdditionalFormats(list);
+                layout->setFormats(list);
             }
 
             elem_cursor = elem_cursor->next;
