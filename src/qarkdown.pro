@@ -81,6 +81,9 @@ OTHER_FILES += \
     cfg/linux.qrc \
     template.html
 
+DISTFILES += \
+    template_kburke.html
+
 
 
 
