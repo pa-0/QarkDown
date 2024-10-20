@@ -196,6 +196,17 @@ bool QarkdownTextEdit::event(QEvent *e)
                 return true;
             }
         }
+
+        // Moving lines with Alt/Option + up/down
+        if ((ke->key() == Qt::Key_Up || ke->key() == Qt::Key_Down) && ke->modifiers() & Qt::AltModifier)
+        {
+            QTextCursor cursor = this->textCursor();
+            if (!cursor.hasSelection() || !cursor.hasComplexSelection())
+            {
+                moveSelectedLines(ke->key());
+                return true;
+            }
+        }
     }
     else if (e->type() == QEvent::ToolTip)
     {
@@ -284,6 +295,110 @@ int QarkdownTextEdit::guessNumOfSpacesToDeleteUponUnindenting()
     if (spacesToDelete == 0 && _indentString.startsWith(" "))
         spacesToDelete = _indentString.length();
     return spacesToDelete;
+}
+
+void QarkdownTextEdit::moveSelectedLines(int keyUpOrDown) // keyUpOrDown can be either Qt::Key_Up or Qt::Key_Down
+{
+    QTextCursor cursor = this->textCursor();
+
+    int originalSelectionStart = cursor.selectionStart();
+    int originalSelectionEnd = cursor.selectionEnd();
+
+    // Expand selection to encompass entire lines
+    int selectionStart = cursor.selectionStart();
+    int selectionEnd = cursor.selectionEnd();
+
+    QTextCursor startCursor(this->document());
+    startCursor.setPosition(selectionStart);
+    startCursor.movePosition(QTextCursor::StartOfBlock);
+
+    QTextCursor endCursor(this->document());
+    endCursor.setPosition(selectionEnd);
+    if (selectionStart == selectionEnd || endCursor.positionInBlock() != 0)
+    {
+        // Select until end of block, unless there is a multi-line selection that
+        // already ends at the end of a block (i.e. ends at the start of the next block)
+        endCursor.movePosition(QTextCursor::EndOfBlock);
+        if (!endCursor.atEnd()) {
+            endCursor.movePosition(QTextCursor::NextCharacter); // Include newline at end of block
+        }
+    }
+
+    selectionStart = startCursor.position();
+    selectionEnd = endCursor.position();
+    cursor.setPosition(selectionStart);
+    cursor.setPosition(selectionEnd, QTextCursor::KeepAnchor);
+
+    QString selectedText = cursor.selection().toPlainText();
+
+    if (keyUpOrDown == Qt::Key_Up) // Move line(s) up
+    {
+        if (startCursor.block().blockNumber() == 0)
+            return;
+
+        // Get the block before the selection
+        QTextBlock previousBlock = startCursor.block().previous();
+
+        int prevBlockStart = previousBlock.position();
+        int prevBlockEnd = prevBlockStart + previousBlock.length();
+
+        QTextCursor prevBlockCursor(this->document());
+        prevBlockCursor.setPosition(prevBlockStart);
+        prevBlockCursor.setPosition(prevBlockEnd, QTextCursor::KeepAnchor);
+        QString prevBlockText = prevBlockCursor.selection().toPlainText();
+
+        cursor.beginEditBlock();
+
+        // Remove the previous block and the selected blocks
+        cursor.removeSelectedText();
+        prevBlockCursor.removeSelectedText();
+
+        // Insert the selected text before the previous block
+        QTextCursor insertCursor(this->document());
+        insertCursor.setPosition(prevBlockStart);
+        insertCursor.insertText(selectedText);
+        insertCursor.insertText(prevBlockText);
+
+        cursor.endEditBlock();
+
+        // Restore cursor position & selection
+        QTextCursor newCursor(this->document());
+        newCursor.setPosition(originalSelectionStart - prevBlockText.length());
+        newCursor.setPosition(originalSelectionEnd - prevBlockText.length(), QTextCursor::KeepAnchor);
+        this->setTextCursor(newCursor);
+    }
+    else if (keyUpOrDown == Qt::Key_Down) // Move line(s) down
+    {
+        // Get the block after the selection
+        QTextBlock nextBlock = endCursor.block();
+        if (!nextBlock.isValid())
+            return;
+
+        QTextCursor nextBlockCursor(this->document());
+        nextBlockCursor.setPosition(nextBlock.position());
+        nextBlockCursor.setPosition(nextBlock.position() + nextBlock.length(), QTextCursor::KeepAnchor);
+        QString nextBlockText = nextBlockCursor.selection().toPlainText();
+
+        cursor.beginEditBlock();
+
+        // Remove selected blocks and the next block
+        nextBlockCursor.removeSelectedText();
+        cursor.removeSelectedText();
+
+        // Insert the next block text before the selected text
+        QTextCursor insertCursor(this->document());
+        insertCursor.setPosition(selectionStart);
+        insertCursor.insertText(nextBlockText);
+        insertCursor.insertText(selectedText);
+
+        cursor.endEditBlock();
+
+        // Restore cursor position & selection
+        QTextCursor newCursor(this->document());
+        newCursor.setPosition(originalSelectionStart + nextBlockText.length());
+        newCursor.setPosition(originalSelectionEnd + nextBlockText.length(), QTextCursor::KeepAnchor);
+        this->setTextCursor(newCursor);
+    }
 }
 
 void QarkdownTextEdit::indentSelectedLines()

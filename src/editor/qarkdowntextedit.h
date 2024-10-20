@@ -75,6 +75,7 @@ protected:
     bool selectionContainsOnlyFullLines(QTextCursor selection);
     QList<int> getLineStartPositionsInSelection(QTextCursor selection);
     int guessNumOfSpacesToDeleteUponUnindenting();
+    void moveSelectedLines(int keyUpOrDown);
     void indentSelectedLines();
     void unindentSelectedLines();
     int numCharsFromCursorToNextTabStop();
