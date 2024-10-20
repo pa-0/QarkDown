@@ -415,6 +415,7 @@ void MainWindow::saveViewPositions(QString filePath, int scrollPosition, int cur
     positionsByFile.insert(stdFilePath, QVariant(thisPositions));
     settings->setValue(SETTING_RECENT_FILE_VIEW_POSITIONS, positionsByFile);
     settings->sync();
+    qDebug() << "Saving position" << thisPositions;
 }
 QPair<int,int> MainWindow::getViewPositions(QString filePath)
 {
@@ -437,13 +438,17 @@ void MainWindow::loadAndSetCurrentFileViewPositions()
     if (openFilePath.isNull())
         return;
     QPair<int,int> scrollAndCursorPositions = getViewPositions(openFilePath);
-    editor->verticalScrollBar()->setValue(scrollAndCursorPositions.first);
+    qDebug() << "Loaded position" << scrollAndCursorPositions;
 
     QTextCursor cursor = editor->textCursor();
     int savedCursorPos = scrollAndCursorPositions.second;
     int maxCursorPos = editor->document()->characterCount() - 1;
     cursor.setPosition(std::max(0, std::min(savedCursorPos, maxCursorPos)));
     editor->setTextCursor(cursor);
+
+    // Setting the text cursor might also affect the scroll position, so let's
+    // set the scroll position explicitly only after we've set the text cursor:
+    editor->verticalScrollBar()->setValue(scrollAndCursorPositions.first);
 }
 
 
