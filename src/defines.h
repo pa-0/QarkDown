@@ -33,7 +33,7 @@
 #define DEF_EXTENSIONS          "md markdown mdtext txt text"
 #define DEF_FONT_SIZE           12
 #define DEF_TAB_WIDTH           4
-#define DEF_HIGHLIGHT_INTERVAL  0.25
+#define DEF_HIGHLIGHT_INTERVAL  0.1
 #define DEF_NUM_RECENT_FILES    20
 #define DEF_INDENT_WITH_TABS    false
 #define DEF_REMEMBER_LAST_FILE  true
