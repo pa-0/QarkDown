@@ -46,22 +46,20 @@ void LineNumberingPlainTextEdit::resizeEvent(QResizeEvent *e)
                                       lineNumberAreaWidth(), cr.height()));
 }
 
-#define kLeftMargin 3
+#define kLeftMargin 5
 #define kRightMargin 3
 
 int LineNumberingPlainTextEdit::lineNumberAreaWidth()
 {
-    int digits = 1;
+    int numDigits = 1;
     int max = qMax(1, document()->blockCount());
     while (max >= 10) {
         max /= 10;
-        ++digits;
+        ++numDigits;
     }
 
-    static int nineCharWidth = -1;
-    if (nineCharWidth == -1)
-        nineCharWidth = fontMetrics().horizontalAdvance(QLatin1Char('9'));
-    int digitsWidth = nineCharWidth * digits;
+    int nineCharWidth = fontMetrics().horizontalAdvance(QLatin1Char('9'));
+    int digitsWidth = nineCharWidth * numDigits;
     return kLeftMargin + digitsWidth + kRightMargin;
 }
 
